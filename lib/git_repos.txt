@@ -1,0 +1,2 @@
+video-caffe: https://github.com/chuckcho/video-caffe.git
+

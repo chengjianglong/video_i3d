@@ -1,0 +1,28 @@
+process video: /data/MFC18_Dev2_Video_Ver3/probe/b2149d5aa76fc9f61be24a78d627857c.mov
+{'algorithom': {'name': 'kwi3d-framedrop', 'version': '0.1.2', 'description': 'Frame drop detection based on I3D neural network. We propose a new approach for forensic analysis by exploiting the local spatio-temporal relationships within a portion of a video to robustly detect frame removals. A I3D Neural Network is adapted for frame drop detection. In order to further suppress the errors due by the network, we produce a refined video-level confidence score and demonstrate that it is superior to the raw output scores from the network', 'metadata_usage': ['no-metadata'], 'target_manipulations': ['SelectCutFrames'], 'algorithm_type': ['integrity-indicator'], 'indicator_type': ['digital'], 'media_type': ['video'], 'file_type': ['video/avi'], 'gpu_usage': ['required'], 'ram_usage': 1024, 'expected_runtime': 100000, 'code_link': 'https://gitlab.mediforprogram.com/kitware/kinematic-authentication-of-video'}, 'detection': {'detection': {'input_filename': 'b2149d5aa76fc9f61be24a78d627857c.mov', 'indicator_score': -10.0, 'confidence': -10.0, 'output': 'OptOutAll', 'specificity': ['global'], 'target_manipulations': ['SelectCutFrames'], 'explanation': 'consistency mismatchs mismatch occured based on the video-level confidence score', 'video_localization': {'frame_detection': [], 'frame_optout': []}}}, 'supplemental_information': None}
+process video: 43adb7189ef4f87f8f1b9511af5fa9bf.mp4
+43adb7189ef4f87f8f1b9511af5fa9bf.mp4
+nframes: 525 , num_frame: 525
+checkpoint_path: i3d-iter-312400
+sart_step: 312401
+test batch k=0, logits: (32, 3), time = [2.944263219833374, 2.605990409851074, 5.550253629684448]
+test batch k=1, logits: (32, 3), time = [3.250593423843384, 0.8482942581176758, 4.09888768196106]
+test batch k=2, logits: (32, 3), time = [3.2430419921875, 0.8252346515655518, 4.068276643753052]
+test batch k=3, logits: (32, 3), time = [3.28316330909729, 0.8291025161743164, 4.1122658252716064]
+test batch k=4, logits: (32, 3), time = [3.2562496662139893, 0.8264250755310059, 4.082674741744995]
+test batch k=5, logits: (32, 3), time = [3.2813100814819336, 0.8255796432495117, 4.106889724731445]
+test batch k=6, logits: (32, 3), time = [3.2410850524902344, 0.8286738395690918, 4.069758892059326]
+test batch k=7, logits: (32, 3), time = [3.2764382362365723, 0.8236696720123291, 4.100107908248901]
+test batch k=8, logits: (32, 3), time = [3.2087020874023438, 0.829556941986084, 4.038259029388428]
+test batch k=9, logits: (32, 3), time = [3.2921266555786133, 0.82991623878479, 4.122042894363403]
+test batch k=10, logits: (32, 3), time = [3.235560894012451, 0.8353006839752197, 4.070861577987671]
+test batch k=11, logits: (32, 3), time = [3.204510450363159, 0.8313238620758057, 4.035834312438965]
+test batch k=12, logits: (32, 3), time = [3.316204786300659, 0.8291294574737549, 4.145334243774414]
+test batch k=13, logits: (32, 3), time = [3.2859342098236084, 0.8419592380523682, 4.127893447875977]
+test batch k=14, logits: (32, 3), time = [3.2524170875549316, 0.8290104866027832, 4.081427574157715]
+test batch k=15, logits: (28, 3), time = [3.204601287841797, 1.4909939765930176, 4.6955952644348145]
+Testing Finished.
+None
+process video: 4dc4e09fc199127d3c940aa084c93ffc.mp4
+4dc4e09fc199127d3c940aa084c93ffc.mp4
+nframes: 399 , num_frame: 399

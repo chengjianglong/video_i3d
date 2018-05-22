@@ -1,0 +1,14 @@
+networkx==1.8.1
+Pillow==5.1.0
+matplotlib==2.2.2
+numpy==1.14.3
+opencv-python==3.4.0.12
+pandas==0.22.0
+scikit-image==0.13.1
+scikit-video
+scikit_learn==0.19.1
+dm-sonnet
+tensorboard_logger==0.1.0
+tensorflow==1.8.0
+torch==0.4.0
+torchvision==0.2.1
