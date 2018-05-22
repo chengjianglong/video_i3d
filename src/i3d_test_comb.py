@@ -1,4 +1,4 @@
-# Copyright 2018 Kitware Inc.
+# Copyright 2017 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,11 +20,9 @@ from __future__ import print_function
 
 import numpy as np
 import tensorflow as tf
-import time
 
 import sys
 import os
-import cv2
 from tensorboard_logger import configure, log_value
 from datetime import datetime
 
@@ -38,63 +36,28 @@ num_steps = 5000000
 batch_size = 16
 max_to_keep = 5
 
-_SAMPLE_VIDEO_FRAMES = 16 
+#_SAMPLE_VIDEO_FRAMES = 79
+_SAMPLE_VIDEO_FRAMES = 16 # by clong on 2017/11/31.
+
+_CHECKPOINT_PATHS = {
+    'rgb': 'data/checkpoints/rgb_scratch/my_model.ckpt',
+    'flow': 'data/checkpoints/flow_scratch/my_model.ckpt',
+    'rgb_imagenet': 'data/checkpoints/rgb_imagenet/model.ckpt',
+    'flow_imagenet': 'data/checkpoints/flow_imagenet/model.ckpt',
+}
+
 
 FLAGS = tf.flags.FLAGS
 
 tf.flags.DEFINE_string('eval_type', 'joint', 'rgb, flow, or joint')
 tf.flags.DEFINE_boolean('imagenet_pretrained', False, '')
-config = tf.ConfigProto(device_count = {'GPU': 2})
-config.gpu_options.allow_growth=True
-
-vlen = 16
-vlen_half = vlen/2
-
-def generate_i3d_infile(videopath):
-    vidname = videopath.split('/')[-1]
-    vidname = vidname.split('\n')[0]
-    in_i3dfname = vidname.split('.')[0] + '_i3d.txt'
-    in_file = open(in_i3dfname, 'w')
-    
-    print(vidname)
-
-    # access the frames
-    cap = cv2.VideoCapture(videopath)
-    nframes = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    num_frame = 0
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if ret == True:
-            num_frame += 1
-        else:
-            break
-
-    print('nframes: ' + str(nframes) + ' , num_frame: ' + str(num_frame))
-    if nframes > num_frame:
-        nframes = num_frame
-
-    select_list = [1]*nframes
-    truth = [0]*nframes
+config = tf.ConfigProto(device_count = {'GPU': 1})
 
 
-    for i in range(len(select_list)):
-        if select_list[i] == 1 and truth[i] == 1 and (i-vlen_half) > 0 and (i+vlen_half)<len(select_list):
-            in_file.write(videopath + ' ' + str(int(i-vlen_half)) + ' 1\n')
-        elif select_list[i] == 1 and truth[i] == 0 and (i-vlen_half) > 0 and (i+vlen_half)<len(select_list):
-            in_file.write(videopath + ' ' + str(int(i-vlen_half)) + ' 0\n')
-
-    in_file.close()
-
-    return in_i3dfname
-        
-
-
-def eval_i3d_comb(test_infname):
+def main(test_infname, res_outfname):
   init_learning_rate = 0.01
   k = 500
   decay_rate = 0.96
-
-  parttag = 'ptest'
 
   test_items = LoadItems(test_infname)
   ntest = len(test_items)
@@ -106,7 +69,7 @@ def eval_i3d_comb(test_infname):
   if eval_type not in ['rgb', 'flow', 'joint']:
     raise ValueError('Bad `eval_type`, must be one of rgb, flow, joint')
 
-  kinetics_classes = [0, 1, 2] #[x.strip() for x in open(_LABEL_MAP_PATH)]
+  kinetics_classes = [0,1] #[x.strip() for x in open(_LABEL_MAP_PATH)]
   Y = tf.placeholder('float', [None, _NUM_CLASSES])
   global_step = tf.Variable(0, trainable = False)
 
@@ -150,7 +113,7 @@ def eval_i3d_comb(test_infname):
   model_predictions = tf.nn.softmax(model_logits)
   correct_pred = tf.equal(tf.argmax(model_predictions, 1), tf.argmax(Y, 1))
   accuracy = tf.reduce_mean(tf.cast(correct_pred, tf.float32))
-  
+  # Define loss and optimizer
   cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=model_logits, labels=Y))
   learning_rate = tf.train.inverse_time_decay(init_learning_rate, global_step, k, decay_rate)
   optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
@@ -158,9 +121,13 @@ def eval_i3d_comb(test_infname):
 
   init = tf.global_variables_initializer()
 
+  checkpoint_dir = './runs/combcheckpoints/'
+  checkpoint_file = tf.train.latest_checkpoint(checkpoint_dir)
+  #saver = tf.train.Saver()
   saver = tf.train.Saver(max_to_keep = max_to_keep)
+  #saver = tf.train.Saver(tf.global_variables(), max_to_keep=2)
 
-  scores = []
+  resfile = open(res_outfname, 'wt')
 
   with tf.Session(config=config) as sess:
     sess.run(init)
@@ -170,7 +137,7 @@ def eval_i3d_comb(test_infname):
     step_eval = 0
 
     start_step = 1
-    checkpoint_path = 'i3d-iter-312400'
+    checkpoint_path = tf.train.latest_checkpoint(checkpoint_dir)
     if checkpoint_path is None:
         print('The stored model is not exist.')
     else:
@@ -180,56 +147,54 @@ def eval_i3d_comb(test_infname):
         print('sart_step: ' + str(start_step))
         saver.restore(sess, checkpoint_path)
 
-        batchsize = 32 #32
-        k = 0
-
-        while k*batchsize < ntest:
-            time0 = time.time()
-
-            start_id = k*batchsize
-            end_id = (k+1)*batchsize
-            if end_id > ntest:
-                end_id = ntest
-
-            tmp_items = test_items[start_id:end_id]
+        for k in range(ntest):
+            tmp_items = test_items[k:(k+1)]
             
         
-            rgbs, flows, tmp_truths = LoadInputData(tmp_items, parttag)
+            rgbs, flows, tmp_truths = LoadInputData(tmp_items)
             truths = tmp_truths
-            
-#            print('rgbs.shape: {}'.format(rgbs.shape))
-#            print('flows.shape: {}'.format(flows.shape))
-#            print('Y.shape: {}'.format(truths.shape))
+
+            #print('rgbs.size = {}'.format(rgbs.shape))
+            #print('flows.size = {}'.format(flows.shape))
+            #print('truths.size = {}'.format(truths.shape))
+
+            #tf.logging.info('RGB checkpoint restored')
+            #tf.logging.info('RGB data loaded, shape=%s', str(rgbs.shape))
             feed_dict[rgb_input] = rgbs
+        
+            #tf.logging.info('Flow checkpoint restored')
+            #tf.logging.info('Flow data loaded, shape=%s', str(flows.shape))
             feed_dict[flow_input] = flows
             feed_dict[Y] = truths
 
-            time1 = time.time()
+            #sess.run(train_op, feed_dict=feed_dict) 
             logits, predictions = sess.run([model_logits, model_predictions], feed_dict=feed_dict)
-            
-            for i in range(logits.shape[0]):
-                scores.append([logits[i][0], logits[i][1], logits[i][2],  predictions[i][0], predictions[i][1], predictions[i][2]])
-            
-            time2 = time.time()
-
-            print('test batch k=' + str(k) + ', logits: {}'.format(logits.shape) + ', time = {}'.format([time1-time0, time2-time1, time2-time0])) # + ', predictions:{}'.format(predictions) + ', truths: {}'.format(truths))
-
-            k += 1
-
-    #sess.run(init)
-  
-  print('Testing Finished.')
-  os.system('rm -rf ' + test_infname)
-  os.system('rm -rf tmp_' + parttag)
-
-  return scores
+            print('test k=' + str(k) + ', logits: {}'.format(logits) + ', predictions:{}'.format(predictions) + ', truths: {}'.format(truths))
+            resfile.write(str(k) + ' ' + str(logits[0][0]) + ' ' + str(logits[0][1]) + ' ' +
+                    str(logits[0][2]) + ' ' + str(predictions[0][0]) + ' ' + str(predictions[0][1])
+                    + ' ' + str(predictions[0][2]) + ' ' + str(truths[0][1]) + '\n')
 
 
-def main(videopath):
-    infilename = generate_i3d_infile(videopath)
-    scores = eval_i3d_comb(infilename)
-    print('scores: {}'.format(scores))
+
+    print('Testing Finished.')
+    resfile.close()
+
+#    out_logits, out_predictions = sess.run([model_logits, model_predictions], feed_dict=feed_dict)
+#
+#    print('out_predictions.shape: ')
+#    print(out_predictions.shape)
+#    
+#    out_logits = out_logits[0]
+#    out_predictions = out_predictions[0]
+#    sorted_indices = np.argsort(out_predictions)[::-1]
+#
+#    print('Norm of logits: %f' % np.linalg.norm(out_logits))
+#    print('\nTop classes and probabilities')
+#    for index in sorted_indices[:20]:
+#      print(out_predictions[index], out_logits[index], kinetics_classes[index])
+
+
 
 
 if __name__ == '__main__':
-  main(sys.argv[1])
+  main(sys.argv[1], sys.argv[2])
