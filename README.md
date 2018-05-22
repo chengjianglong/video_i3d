@@ -3,10 +3,8 @@
 the output score curves. It is able to identify whether frame dropping exists and even determine the exact location of frame dropping without any information of
 the reference/original video. 
 
-• For performance comparison, we also compare to a series of baselines including cue-based algorithms (Color histogram, motion energy, and optical flow)
-and learning-based algorithms (an SVM algorithm and convolutional neural networks (CNNs) using two or three frames as input)
 
-We extend the previous C3D, a single stream network, to two-stream 3D neural networks (I3D) to incorporate flow information as input. I3D has three advantages:
+The network is a two-stream 3D neural networks (I3D) to incorporate flow information as input. I3D has three advantages:
 
 • Inflating 2D ConvNets into 3D. Filters are typically square and we just make them cubic – N × N filters
 become N × N × N.
